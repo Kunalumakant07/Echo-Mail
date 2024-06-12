@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <title>Mass Mail Dispatcher</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="navbar-logo">Echo Mail</div>
+        </div>
+        <div class="main-content">
+            <form id="massMailForm">
+                <h2>Mass Mail Dispatcher</h2>
+                <div class="form-group">
+                    <input type="text" id="senderEmail" placeholder="Sender Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="subject" placeholder="Subject" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="message" placeholder="Message" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="csvFile"><i class="fas fa-file-csv"></i> Choose CSV File</label>
+                    <input type="file" id="csvFile" accept=".csv" required onchange="processEmails()">
+                </div>
+                <button type="button" onclick="sendEmails()"><i class="fas fa-paper-plane"></i> Send Emails</button>
+            </form>
+
+            <div class="card-container">
+                <div class="card valid-card" id="validEmails">
+                    <h3>Valid Emails :</h3>
+                    <p id="validEmailCount">(0)</p>
+                    <p id="validEmailList"></p>
+                 
+                </div>
+                
+                <div class="card invalid-card" id="invalidEmails">
+                    <h3>Invalid Emails :</h3>
+                    <p id="invalidEmailCount">(0)</p>
+                    <p id="invalidEmailList"></p>
+                
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            &copy; 2023 Echo Mail by Umakant kunal.
+        </div>
+    </div>
+
+    <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+    <script>
+        (function () {
+            emailjs.init("lZbTq0Epj9rtM-ozt");// Replace with your actual user ID 
+        })();
+
+        function processEmails() {
+    var validEmails = [];
+    var invalidEmails = [];
+
+    var fileInput = document.getElementById("csvFile");
+    var file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select a CSV file.");
+        return;
+    }
+
+    var reader = new FileReader();
+    
+    reader.onloadend = function () {
+        var csv = reader.result;
+        var lines = csv.split('\n');
+        for (var i = 0; i < lines.length; i++) {
+            var email = lines[i].trim();
+            var emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,3}$/;
+            if (emailRegex.test(email)) {
+                validEmails.push(email);
+            } else {
+                invalidEmails.push(email);
+            }
+        }
+
+        if (invalidEmails[invalidEmails.length - 1] === "") {
+            invalidEmails.pop();
+        }
+
+        document.getElementById("validEmailList").innerText = validEmails.join("\n");
+        document.getElementById("invalidEmailList").innerText = invalidEmails.join("\n");
+        document.getElementById("validEmailCount").innerText = "(" + validEmails.length + ")";
+        document.getElementById("invalidEmailCount").innerText = "(" + invalidEmails.length + ")";
+    };
+
+    reader.readAsText(file);
+}
+
+
+function sendEmails() {
+    var senderEmail = document.getElementById("senderEmail").value;
+    var message = document.getElementById("message").value;
+    var subject = document.getElementById("subject").value;
+
+    if (!senderEmail || !message || !subject) {
+        alert("Please fill in all sender details (Sender Email, Subject, and Message) before sending emails.");
+        return;
+    }
+
+    var validEmails = document.getElementById("validEmailList").innerText.split("\n");
+
+    if (validEmails.length === 1 && validEmails[0] === "") {
+        alert("No valid emails to send.");
+        return;
+    }
+
+    
+    for (var j = 0; j < validEmails.length; j++) {
+        var templateParams = {
+        to_name: validEmails[j], 
+        from_name: senderEmail,   
+        subject: subject, 
+        message: message,         
+        };
+        // Replace with your actual service_id and template_id
+        emailjs.send('service_mb2za24', 'template_xra8w6f', templateParams)
+            .then(function (response) {
+                console.log("SUCCESS", response);
+            }, function (error) {
+                console.log("FAILED", error);
+            });
+    }
+
+    alert("Emails sent to valid email addresses.");
+}
+</script>
+</body>
+</html>
